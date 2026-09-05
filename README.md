@@ -1,86 +1,53 @@
 # GraphSeek
 
-GraphSeek is an educational vector-search engine that will implement
-Hierarchical Navigable Small World (HNSW) search from first principles.
-The goal is to make the speed–accuracy trade-off measurable rather than hide
-the algorithm behind a library call.
+A small vector search project in Python. Exact search works; HNSW is next.
 
-> Status: project scaffold. The algorithm is intentionally built through
-> small, tested commits described in [`TASKS.md`](TASKS.md).
+## Setup
 
-## Why this project
+Requires Python 3.11 or newer.
 
-Modern AI systems retrieve semantically similar documents, source code, and
-images from high-dimensional embedding spaces. Exact search is accurate but
-becomes expensive as a collection grows. GraphSeek will compare exact search
-with HNSW approximate search using recall, latency, throughput, build time,
-and memory measurements.
-
-## Planned capabilities
-
-- Exact top-k search as a ground-truth baseline
-- Cosine and Euclidean distance metrics
-- HNSW insertion and querying implemented without a vector-database library
-- Deterministic index persistence
-- A small HTTP API
-- Reproducible benchmarks against exact search and FAISS
-- Experiments on synthetic vectors and source-code embeddings
-
-## Project principles
-
-1. Correctness comes before optimization.
-2. Every algorithmic feature includes tests and complexity notes.
-3. Benchmarks report the environment and never cherry-pick results.
-4. Each task becomes one focused, reviewable commit.
-5. AI assistance must explain decisions; generated code is verified locally.
-
-## Quick start
-
-GraphSeek requires Python 3.11 or newer.
-
-```bash
+```sh
 python3 -m venv .venv
 source .venv/bin/activate
-python -m pip install -e '.[dev]'
+pip install -e '.[dev]'
 pytest
-ruff check .
-mypy src
 ```
 
-## Repository layout
+## Search
 
-```text
-src/graphseek/        Python package
-tests/                Unit and integration tests
-benchmarks/           Reproducible benchmark entry points and results
-docs/                 Architecture and experimental methodology
-.github/workflows/    Continuous integration
+```python
+from graphseek.flat import FlatIndex
+
+index = FlatIndex(metric="l2")
+index.add([1, 0])
+index.add([0, 1])
+print(index.search([0.9, 0.1], k=1))
 ```
 
-## Roadmap
+`l2` returns squared Euclidean distance; `cosine` returns cosine distance.
+Lower means closer. IDs start at zero and break ties. Requests larger than the
+collection return every neighbor. Empty indexes return no neighbors. Invalid
+vectors or nonpositive k raise ValueError. Cosine rejects zero vectors.
 
-The implementation roadmap, acceptance criteria, AI prompts, and intended
-commit messages live in [`TASKS.md`](TASKS.md). Work on only one task at a
-time so the Git history shows how the system developed.
+## Sample data
 
-## Target evaluation
+```sh
+python -m graphseek.datasets --count 100 --queries 5 --dimensions 8 --k 3
+```
 
-The final report will include:
+Prints exact neighbor IDs for seeded clustered data as JSON. This is a
+correctness fixture, not a performance benchmark.
 
-- recall@1 and recall@10
-- median and p95 query latency
-- queries per second
-- index build time
-- peak memory and bytes per vector
-- results across multiple dataset sizes and HNSW parameter settings
+## Files
 
-## References
+- `src/graphseek/metrics.py`: distances and input checks
+- `src/graphseek/flat.py`: exact search
+- `src/graphseek/datasets.py`: sample data and ground truth
+- `tests/`: known examples and reference comparisons
+- `TASKS.md`: next steps
 
-- Malkov and Yashunin, *Efficient and Robust Approximate Nearest Neighbor
-  Search Using Hierarchical Navigable Small World Graphs*
-- FAISS documentation and published HNSW benchmark methodology
+Vectors stay in memory and every search checks every vector. Persistence,
+HTTP endpoints, and approximate search are not implemented yet. There are no
+measured performance claims.
 
-## License
-
-MIT
-
+Next: [HNSW](https://arxiv.org/abs/1603.09320). MIT license.
