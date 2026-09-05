@@ -45,6 +45,7 @@ correctness fixture, not a performance benchmark.
 - `src/graphseek/datasets.py`: sample data and ground truth
 - `tests/`: known examples and reference comparisons
 - `TASKS.md`: next steps
+- `docs/code-tour.md`: explanation of how the current code works
 
 Vectors stay in memory and every search checks every vector. Persistence,
 HTTP endpoints, and approximate search are not implemented yet. There are no

@@ -12,4 +12,5 @@ Invalid insertions leave the index unchanged. Cosine normalization scales
 before computing norms to avoid overflow. Squared L2 reports overflow.
 
 HNSW will reuse the distance functions and Neighbor type. FlatIndex remains
-the exact reference for recall measurements.
+the exact reference for recall measurements. See `code-tour.md` for a longer,
+beginner-friendly explanation of each component.
