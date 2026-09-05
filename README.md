@@ -48,6 +48,26 @@ Run the automated tests with:
 pytest
 ```
 
-NumPy is not currently a dependency because the package does not yet perform
-array or vector calculations. It can be added when those operations are
-implemented.
+NumPy is a runtime dependency because GraphSeek uses NumPy arrays as its
+validated vector representation. Installing the project installs NumPy
+automatically.
+
+## Validate a vector
+
+Use `validate_vector()` to turn a supported input into GraphSeek's standard
+vector representation:
+
+```python
+from graphseek.metrics import validate_vector
+
+vector = validate_vector([1, 2, 3])
+print(vector)  # [1. 2. 3.]
+```
+
+The function accepts lists, tuples, and one-dimensional NumPy arrays. It returns
+a separate NumPy `float64` array, so changing the result does not change the
+original input.
+
+Vectors must contain at least one real, finite number. Nested vectors, strings,
+complex numbers, booleans, `NaN`, and positive or negative infinity are
+rejected with a descriptive exception.
