@@ -1,54 +1,17 @@
 # GraphSeek
 
-A small vector search project in Python. Exact search works; HNSW is next.
+GraphSeek is a learning project for building vector search from the ground up.
 
-## Setup
+The first goal is to understand how vectors and distance calculations work.
+After that, the project will grow one small, tested step at a time toward exact
+nearest-neighbour search and then HNSW approximate search.
 
-Requires Python 3.11 or newer.
+## Current status
 
-```sh
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -e '.[dev]'
-pytest
-```
+The repository has been reset to a minimal starting point. No search algorithm
+has been implemented yet.
 
-## Search
+## Source
 
-```python
-from graphseek.flat import FlatIndex
+Python code will live in `src/graphseek/`.
 
-index = FlatIndex(metric="l2")
-index.add([1, 0])
-index.add([0, 1])
-print(index.search([0.9, 0.1], k=1))
-```
-
-`l2` returns squared Euclidean distance; `cosine` returns cosine distance.
-Lower means closer. IDs start at zero and break ties. Requests larger than the
-collection return every neighbor. Empty indexes return no neighbors. Invalid
-vectors or nonpositive k raise ValueError. Cosine rejects zero vectors.
-
-## Sample data
-
-```sh
-python -m graphseek.datasets --count 100 --queries 5 --dimensions 8 --k 3
-```
-
-Prints exact neighbor IDs for seeded clustered data as JSON. This is a
-correctness fixture, not a performance benchmark.
-
-## Files
-
-- `src/graphseek/metrics.py`: distances and input checks
-- `src/graphseek/flat.py`: exact search
-- `src/graphseek/datasets.py`: sample data and ground truth
-- `tests/`: known examples and reference comparisons
-- `TASKS.md`: next steps
-- `docs/code-tour.md`: explanation of how the current code works
-
-Vectors stay in memory and every search checks every vector. Persistence,
-HTTP endpoints, and approximate search are not implemented yet. There are no
-measured performance claims.
-
-Next: [HNSW](https://arxiv.org/abs/1603.09320). MIT license.
