@@ -1,10 +1,11 @@
-"""Validation helpers for vectors used throughout GraphSeek.
+"""Validation and distance helpers used throughout GraphSeek.
 
 Inputs are converted to one consistent representation before distance metrics
 or search algorithms use them.
 """
 
-from typing import TypeAlias
+import math
+from typing import Any, TypeAlias
 
 import numpy as np
 from numpy.typing import NDArray
@@ -12,7 +13,7 @@ from numpy.typing import NDArray
 # A validated vector is always a flat NumPy array of 64-bit floating-point
 # numbers. VectorInput documents the three container types callers may provide.
 Vector: TypeAlias = NDArray[np.float64]
-VectorInput: TypeAlias = list[int | float] | tuple[int | float, ...] | np.ndarray
+VectorInput: TypeAlias = list[int | float] | tuple[int | float, ...] | NDArray[Any]
 
 
 def validate_vector(value: VectorInput) -> Vector:
@@ -54,3 +55,65 @@ def validate_vector(value: VectorInput) -> Vector:
         raise ValueError("Vector values must be finite")
 
     return result
+
+
+def _validate_pair(left: VectorInput, right: VectorInput) -> tuple[Vector, Vector]:
+    """Validate two vectors and require matching dimensions."""
+    left_vector = validate_vector(left)
+    right_vector = validate_vector(right)
+
+    if left_vector.shape != right_vector.shape:
+        raise ValueError("Vectors must have the same dimension")
+
+    return left_vector, right_vector
+
+
+def squared_l2(left: VectorInput, right: VectorInput) -> float:
+    """Return squared Euclidean distance between equal-dimensional vectors.
+
+    The distance calculation takes O(d) time and O(1) auxiliary space after
+    validation, where d is the vector dimension. Validation creates two O(d)
+    copies so callers' inputs remain independent and unmodified.
+    """
+    left_vector, right_vector = _validate_pair(left, right)
+
+    distance = 0.0
+    for left_value, right_value in zip(left_vector, right_vector, strict=True):
+        difference = float(left_value - right_value)
+        distance += difference * difference
+
+    return distance
+
+
+def cosine_distance(left: VectorInput, right: VectorInput) -> float:
+    """Return cosine distance in [0, 2] for two nonzero vectors.
+
+    Cosine distance is ``1 - cosine_similarity``. The calculation takes O(d)
+    time and O(1) auxiliary space after validation. Validation creates two O(d)
+    copies so callers' inputs remain independent and unmodified.
+    """
+    left_vector, right_vector = _validate_pair(left, right)
+
+    dot_product = 0.0
+    left_squared_magnitude = 0.0
+    right_squared_magnitude = 0.0
+
+    for left_value, right_value in zip(left_vector, right_vector, strict=True):
+        left_number = float(left_value)
+        right_number = float(right_value)
+        dot_product += left_number * right_number
+        left_squared_magnitude += left_number * left_number
+        right_squared_magnitude += right_number * right_number
+
+    if left_squared_magnitude == 0.0 or right_squared_magnitude == 0.0:
+        raise ValueError("Cosine distance is undefined for zero vectors")
+
+    magnitude_product = math.sqrt(left_squared_magnitude) * math.sqrt(
+        right_squared_magnitude
+    )
+    similarity = dot_product / magnitude_product
+
+    # Floating-point rounding can place a mathematically valid cosine just
+    # outside [-1, 1]. Clamping preserves cosine distance's [0, 2] contract.
+    bounded_similarity = min(1.0, max(-1.0, similarity))
+    return 1.0 - bounded_similarity

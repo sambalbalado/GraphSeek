@@ -2,14 +2,14 @@
 
 GraphSeek is a learning project for building vector search from the ground up.
 
-The first goal is to understand how vectors and distance calculations work.
-After that, the project will grow one small, tested step at a time toward exact
+GraphSeek currently validates vectors and calculates squared Euclidean and
+cosine distance. It will grow one small, tested step at a time toward exact
 nearest-neighbour search and then HNSW approximate search.
 
 ## Current status
 
-The repository has been reset to a minimal starting point. No search algorithm
-has been implemented yet.
+The metric foundation is complete. No search index or graph algorithm has been
+implemented yet.
 
 ## Source
 
@@ -39,13 +39,21 @@ python -m pip install -e ".[dev]"
 ```
 
 The `-e` option performs an editable install, so changes under `src/` are used
-without reinstalling the package. The `[dev]` extra installs tools needed while
-developing the project, currently `pytest`.
+without reinstalling the package. The `[dev]` extra installs the tools used
+while developing the project: pytest, Ruff, and mypy.
 
 Run the automated tests with:
 
 ```bash
 pytest
+```
+
+Run all configured quality checks with:
+
+```bash
+pytest
+ruff check .
+mypy src
 ```
 
 NumPy is a runtime dependency because GraphSeek uses NumPy arrays as its
@@ -71,3 +79,27 @@ original input.
 Vectors must contain at least one real, finite number. Nested vectors, strings,
 complex numbers, booleans, `NaN`, and positive or negative infinity are
 rejected with a descriptive exception.
+
+## Calculate vector distance
+
+GraphSeek provides two metrics:
+
+```python
+from graphseek.metrics import cosine_distance, squared_l2
+
+squared_distance = squared_l2([0, 0], [3, 4])
+direction_distance = cosine_distance([1, 0], [0, 1])
+
+print(squared_distance)  # 25.0
+print(direction_distance)  # 1.0
+```
+
+Squared Euclidean distance adds the squared coordinate differences. It omits
+the square root because squaring preserves nearest-neighbour ordering while
+avoiding unnecessary work. Cosine distance is `1 - cosine similarity`; it
+compares direction rather than magnitude and is undefined for a zero vector.
+
+Both metrics require equal dimensions. Each calculation examines every
+coordinate, so it takes O(d) time for dimension `d`. The calculation itself
+uses O(1) auxiliary space, while input validation creates O(d) copies to keep
+the caller's data independent and unmodified.
